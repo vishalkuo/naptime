@@ -1,7 +1,6 @@
 package org.coursera.naptime.ari.graphql.schema
 
 import com.linkedin.data.DataMap
-import com.typesafe.scalalogging.StrictLogging
 import org.coursera.naptime.ResourceName
 import org.coursera.naptime.ari.graphql.SangriaGraphQlContext
 import org.coursera.naptime.ari.graphql.SangriaGraphQlSchemaBuilder
@@ -18,7 +17,7 @@ import sangria.schema.Value
 
 import scala.collection.JavaConverters._
 
-object NaptimePaginatedResourceField extends StrictLogging {
+object NaptimePaginatedResourceField {
 
   val COMPLEXITY_COST = 10.0D
 

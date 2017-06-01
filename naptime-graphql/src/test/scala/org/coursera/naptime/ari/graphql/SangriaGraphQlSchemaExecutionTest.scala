@@ -115,7 +115,7 @@ class SangriaGraphQlSchemaExecutionTest extends AssertionsForJUnit with ScalaFut
     val response = Response(
       topLevelResponses = Map(topLevelRequest ->
         TopLevelResponse(new DataList(List("1").asJava), ResponsePagination.empty)),
-      data = Map(ResourceName("courses", 1) -> Map("1" -> courseOne.data())))
+      data = Map(ResourceName("courses", 1) -> List("1" -> courseOne.data())))
     val context = SangriaGraphQlContext(response)
     val execution = Executor.execute(schema, queryAst, context).futureValue
     assert(
@@ -160,7 +160,7 @@ class SangriaGraphQlSchemaExecutionTest extends AssertionsForJUnit with ScalaFut
     val response = Response(
       topLevelResponses = Map(topLevelRequest ->
         TopLevelResponse(new DataList(List("1").asJava), ResponsePagination.empty)),
-      data = Map(ResourceName("courses", 1) -> Map(
+      data = Map(ResourceName("courses", 1) -> List(
         "1" -> courseOne.data(),
         "2" -> courseTwo.data())))
     val context = SangriaGraphQlContext(response)
@@ -201,7 +201,7 @@ class SangriaGraphQlSchemaExecutionTest extends AssertionsForJUnit with ScalaFut
     val response = Response(
       topLevelResponses = Map(topLevelRequest ->
         TopLevelResponse(new DataList(List("1").asJava), ResponsePagination.empty)),
-      data = Map(ResourceName("courses", 1) -> Map(
+      data = Map(ResourceName("courses", 1) -> List(
         "1" -> courseOne.data())))
     val context = SangriaGraphQlContext(response)
     val execution = Executor.execute(schema, queryAst, context).futureValue
@@ -241,7 +241,7 @@ class SangriaGraphQlSchemaExecutionTest extends AssertionsForJUnit with ScalaFut
     val response = Response(
       topLevelResponses = Map(topLevelRequest ->
         TopLevelResponse(new DataList(List("1").asJava), ResponsePagination.empty)),
-      data = Map(ResourceName("courses", 1) -> Map("1" -> courseOne.data())))
+      data = Map(ResourceName("courses", 1) -> List("1" -> courseOne.data())))
     val context = SangriaGraphQlContext(response)
     val execution = Executor.execute(schema, queryAst, context).futureValue
     assert(
@@ -282,7 +282,7 @@ class SangriaGraphQlSchemaExecutionTest extends AssertionsForJUnit with ScalaFut
     val response = Response(
       topLevelResponses = Map(topLevelRequestOne ->
         TopLevelResponse(new DataList(List("1").asJava), ResponsePagination.empty)),
-      data = Map(ResourceName("courses", 1) -> Map("1" -> courseOne.data())))
+      data = Map(ResourceName("courses", 1) -> List("1" -> courseOne.data())))
     val context = SangriaGraphQlContext(response)
     val execution = Executor.execute(schema, queryAst, context).futureValue
 

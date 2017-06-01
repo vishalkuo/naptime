@@ -70,7 +70,7 @@ class NaptimePaginationFieldTest extends AssertionsForJUnit with MockitoSugar {
     TopLevelResponse(
       ids = new DataList(List("1").asJava),
       pagination = ResponsePagination(None))),
-    Map(ResourceName.parse(resourceName).get -> Map("1" -> new DataMap()))))
+    Map(ResourceName.parse(resourceName).get -> List("1" -> new DataMap()))))
 
   @Test
   def resolveNestedEmptyList(): Unit = {

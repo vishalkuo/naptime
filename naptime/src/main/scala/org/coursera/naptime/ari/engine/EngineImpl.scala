@@ -123,12 +123,10 @@ class EngineImpl @Inject() (
       val topLevelResponses = forwardRelationResponses ++ reverseRelationResponses
 
       Future.sequence(topLevelResponses).flatMap { fieldResponses =>
-        println(s"FIELDRESPONSE: $fieldResponses")
         val mutableTopLevelData = topLevelData
           .map(_.clone())
           .map(data => data.get("id") -> data)
           .toMap
-
         for {
           fieldRelationResponse <- fieldResponses
           (id, data) <- mutableTopLevelData
@@ -143,8 +141,6 @@ class EngineImpl @Inject() (
         val responseWithUpdatedData = topLevelResponse.copy(data = updatedData)
 
         val finalResponse = fieldResponses.foldLeft(responseWithUpdatedData)(_ ++ _.response)
-        println(s"FINAL: $finalResponse")
-
         val relatedResponsesFut = fieldResponses.flatMap { fieldResponse =>
           fieldResponse.response.data.headOption.map { case (resourceName, data) =>
             val newTopLevelRequest = TopLevelRequest(resourceName, fieldResponse.requestField)
