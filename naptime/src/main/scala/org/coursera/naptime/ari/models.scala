@@ -147,7 +147,7 @@ case class ResponseMetrics(
  */
 case class Response(
   topLevelResponses: Map[TopLevelRequest, TopLevelResponse],
-  data: Map[ResourceName, Map[AnyRef, DataMap]],
+  data: Map[ResourceName, List[(AnyRef, DataMap)]],
   metrics: ResponseMetrics = ResponseMetrics()) {
 
   // TODO: performance test this implementation, and consider optimizing it.
@@ -155,9 +155,9 @@ case class Response(
   def ++(other: Response): Response = {
     val mergedTopLevel = topLevelResponses ++ other.topLevelResponses
     val mergedData = (data.keySet ++ other.data.keySet).map { resourceName =>
-      val lhs = data.getOrElse(resourceName, Map.empty)
-      val rhs = other.data.getOrElse(resourceName, Map.empty)
-      val mergedMap = (lhs.keySet ++ rhs.keySet).map { key =>
+      val lhs = data.getOrElse(resourceName, Map.empty).toMap
+      val rhs = other.data.getOrElse(resourceName, Map.empty).toMap
+      val mergedList = (lhs.keySet ++ rhs.keySet).map { key =>
         val lh = lhs.get(key)
         val rh = rhs.get(key)
         val merged = (lh, rh) match {
@@ -170,10 +170,11 @@ case class Response(
             mutableL.putAll(r)
             mutableL
         }
-        key -> merged
-      }.toMap
-      resourceName -> mergedMap
+        (key, merged)
+      }.toList.sortBy(_._1.toString)
+      resourceName -> mergedList
     }.toMap
+
     val mergedMetrics = metrics ++ other.metrics
     Response(mergedTopLevel, mergedData, mergedMetrics)
   }

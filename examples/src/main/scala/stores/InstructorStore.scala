@@ -20,6 +20,30 @@ class InstructorStore {
     2 -> Instructor(
       partner = "ucsd",
       name = "Barb Oakley",
+      photoUrl = ""),
+    3 -> Instructor(
+      partner = "ucsd3",
+      name = "Barb Oakley3",
+      photoUrl = ""),
+    4 -> Instructor(
+      partner = "ucsd4",
+      name = "Barb Oakley4",
+      photoUrl = ""),
+    5 -> Instructor(
+      partner = "ucsd5",
+      name = "Barb Oakley5",
+      photoUrl = ""),
+    6 -> Instructor(
+      partner = "ucsd6",
+      name = "Barb Oakley6",
+      photoUrl = ""),
+    7 -> Instructor(
+      partner = "ucsd7",
+      name = "Barb Oakley7",
+      photoUrl = ""),
+    8 -> Instructor(
+      partner = "ucsd8",
+      name = "Barb Oakley8",
       photoUrl = ""))
 
 

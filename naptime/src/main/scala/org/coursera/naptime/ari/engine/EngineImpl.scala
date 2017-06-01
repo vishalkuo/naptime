@@ -100,8 +100,7 @@ class EngineImpl @Inject() (
       requestHeader: RequestHeader,
       topLevelRequest: TopLevelRequest,
       topLevelResponse: Response): Future[Response] = {
-    val topLevelData = topLevelResponse.data.get(topLevelRequest.resource)
-      .toIterable.flatMap(_.values)
+    val topLevelData = topLevelResponse.data(topLevelRequest.resource).map(_._2)
 
     schemaProvider.mergedType(topLevelRequest.resource).map { mergedType =>
       val (forwardRelations, reverseRelations) = collectRelations(
@@ -124,10 +123,12 @@ class EngineImpl @Inject() (
       val topLevelResponses = forwardRelationResponses ++ reverseRelationResponses
 
       Future.sequence(topLevelResponses).flatMap { fieldResponses =>
+        println(s"FIELDRESPONSE: $fieldResponses")
         val mutableTopLevelData = topLevelData
           .map(_.clone())
           .map(data => data.get("id") -> data)
           .toMap
+
         for {
           fieldRelationResponse <- fieldResponses
           (id, data) <- mutableTopLevelData
@@ -136,11 +137,14 @@ class EngineImpl @Inject() (
           val ids = idMap.getOrElse(id, new DataList())
           insertAtPath(data, mergedType, fieldRelationResponse.path, ids)
         }
+        val sorted = mutableTopLevelData.toList.sortBy(_._1.toString)
         val updatedData = topLevelResponse.data +
-          (topLevelRequest.resource -> mutableTopLevelData)
+          (topLevelRequest.resource -> sorted)
         val responseWithUpdatedData = topLevelResponse.copy(data = updatedData)
 
         val finalResponse = fieldResponses.foldLeft(responseWithUpdatedData)(_ ++ _.response)
+        println(s"FINAL: $finalResponse")
+
         val relatedResponsesFut = fieldResponses.flatMap { fieldResponse =>
           fieldResponse.response.data.headOption.map { case (resourceName, data) =>
             val newTopLevelRequest = TopLevelRequest(resourceName, fieldResponse.requestField)
@@ -274,20 +278,21 @@ class EngineImpl @Inject() (
               args = arguments ++ fieldArguments,
               selections = requestField.selections))
           executeTopLevelRequest(requestHeader, relatedTopLevelRequest).map { response =>
-            val responseIds = response.data.headOption.map(_._2.keys.toList).getOrElse(List.empty)
+            val responseIds = response.data.headOption.map(_._2.map(_._1)).getOrElse(List.empty)
             val idMap = elementsAndArguments.map { case (element, elementArguments) =>
               val ids = elementArguments.find(_._1 == "ids")
                 .map(_._2.as[String].split(",").map(_.asInstanceOf[AnyRef]).toList)
                 .getOrElse(List[AnyRef]())
-
               // MultiGets return a list of ids, and Gets return a single id (or null)
               val intersection = responseIds.filter(id => ids.contains(id.toString))
+              val indexedIds = ids.zipWithIndex.toMap
+              val sortedIntersection = intersection.sortBy(id => indexedIds(id.toString))
               val filteredIds = reverse.relationType match {
-                case MULTI_GET => new DataList(intersection.asJava)
+                case MULTI_GET => new DataList(sortedIntersection.asJava)
                 case GET => intersection.headOption.orNull
                 case _ => throw new RuntimeException(s"Unhandled relation type")
               }
-              element.get("id") -> filteredIds
+             element.get("id") -> filteredIds
             }
 
             (idMap, Response(
@@ -308,7 +313,7 @@ class EngineImpl @Inject() (
               args = arguments ++ requestField.args,
               selections = requestField.selections))
           executeTopLevelRequest(requestHeader, relatedTopLevelRequest).map { response =>
-            val responseIds = response.data.headOption.map { case (_, elements) => elements.keys.toList }.getOrElse(List.empty)
+            val responseIds = response.data.headOption.map { case (_, elements) => elements.map(_._1) }.getOrElse(List.empty)
             val filteredResponseIds = reverse.relationType match {
               case FINDER => new DataList(responseIds.asJava)
               case SINGLE_ELEMENT_FINDER => responseIds.headOption.orNull
@@ -324,10 +329,11 @@ class EngineImpl @Inject() (
       case _ => throw new RuntimeException(s"Unhandled relation type: ${reverse.relationType}")
     }
     Future.fold(futureIdMapAndResponse)(FieldRelationResponse(requestField, path)) {
-      case (fieldRelationResponse, (idMap, res)) =>
+      case (fieldRelationResponse, (idMap, res)) => {
         fieldRelationResponse.copy(
           response = fieldRelationResponse.response ++ res,
           idsToAnnotate = Some(fieldRelationResponse.idsToAnnotate.getOrElse(Map.empty) ++ idMap))
+      }
     }
   }
 
