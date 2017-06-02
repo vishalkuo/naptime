@@ -16,6 +16,7 @@
 
 package org.coursera.naptime.ari
 
+import akka.actor.FSM.->
 import com.linkedin.data.DataList
 import com.linkedin.data.DataMap
 import com.linkedin.data.schema.DataSchema
@@ -152,7 +153,7 @@ case class Response(
 
   // TODO: performance test this implementation, and consider optimizing it.
   // Note: this operation potentially mutates the current response due to interior mutability.
-  def ++(other: Response): Response = {
+  def merge(other: Response, sortOrderOption: Option[List[String]] = None): Response = {
     val mergedTopLevel = topLevelResponses ++ other.topLevelResponses
     val mergedData = (data.keySet ++ other.data.keySet).map { resourceName =>
       val lhs = data.getOrElse(resourceName, Map.empty).toMap
@@ -171,8 +172,15 @@ case class Response(
             mutableL
         }
         (key, merged)
-      }.toList.sortBy(_._1.toString)
-      resourceName -> mergedList
+      }.toList
+      val resultantList = sortOrderOption match {
+        case Some(sortOrder) => {
+          val indexedOrder = sortOrder.zipWithIndex.toMap
+          mergedList.sortBy(id => indexedOrder(id.toString))
+        }
+        case _ => mergedList
+      }
+      resourceName -> resultantList
     }.toMap
 
     val mergedMetrics = metrics ++ other.metrics

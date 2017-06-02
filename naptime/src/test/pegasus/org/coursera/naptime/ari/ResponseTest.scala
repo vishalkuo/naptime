@@ -27,7 +27,7 @@ class ResponseTest extends AssertionsForJUnit {
       data = Map(topLevelRequest.resource -> List(
         ("abc", new DataMap(Map("id" -> "abc", "slug" -> "machine-learning").asJava)))))
 
-    val merged = Response.empty ++ response
+    val merged = Response.empty merge response
 
     assert(1 === merged.topLevelResponses.size)
     assert(merged.topLevelResponses.contains(topLevelRequest))
@@ -45,7 +45,7 @@ class ResponseTest extends AssertionsForJUnit {
     assert(abcDataMap.containsKey("id"))
     assert(abcDataMap.containsKey("slug"))
 
-    val merged2 = response ++ Response.empty
+    val merged2 = response merge Response.empty
     assert(merged === merged2)
   }
 
@@ -77,7 +77,7 @@ class ResponseTest extends AssertionsForJUnit {
       data = Map(topLevelRequestInstructors.resource -> List(
         new Integer(123) -> new DataMap(Map("id" -> new Integer(123), "name" -> "Professor X").asJava))))
 
-    val merged: Response = Response.empty ++ responseCourses ++ responseInstructors
+    val merged: Response = Response.empty merge responseCourses merge responseInstructors
 
     assert(2 === merged.topLevelResponses.size)
     assert(merged.topLevelResponses.contains(topLevelRequestCourses))
@@ -135,7 +135,7 @@ class ResponseTest extends AssertionsForJUnit {
       data = Map(topLevelRequest2.resource -> List(
         "xyz" -> new DataMap(Map("id" -> "xyz", "slug" -> "pgm").asJava))))
 
-    val merged: Response = response1 ++ response2
+    val merged: Response = response1 merge response2
 
     assert(2 === merged.topLevelResponses.size)
     assert(merged.topLevelResponses.contains(topLevelRequest1))
@@ -190,7 +190,7 @@ class ResponseTest extends AssertionsForJUnit {
       data = Map(topLevelRequest2.resource -> List(
         "abc" -> new DataMap(Map("id" -> "abc", "slug" -> "machine-learning").asJava))))
 
-    val merged: Response = response1 ++ response2
+    val merged: Response = response1 merge response2
 
     assert(2 === merged.topLevelResponses.size)
     assert(merged.topLevelResponses.contains(topLevelRequest1))

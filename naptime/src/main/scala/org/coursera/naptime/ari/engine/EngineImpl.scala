@@ -64,7 +64,7 @@ class EngineImpl @Inject() (
     }
     val futureResponses = Future.sequence(responseFutures)
     futureResponses.map { responses =>
-      responses.foldLeft(Response.empty)(_ ++ _)
+      responses.foldLeft(Response.empty)((lhs, rhs) => lhs.merge(rhs))
     }
   }
 
@@ -126,7 +126,6 @@ class EngineImpl @Inject() (
         val mutableTopLevelData = topLevelData
           .map(_.clone())
           .map(data => data.get("id") -> data)
-          .toMap
         for {
           fieldRelationResponse <- fieldResponses
           (id, data) <- mutableTopLevelData
@@ -135,12 +134,12 @@ class EngineImpl @Inject() (
           val ids = idMap.getOrElse(id, new DataList())
           insertAtPath(data, mergedType, fieldRelationResponse.path, ids)
         }
-        val sorted = mutableTopLevelData.toList.sortBy(_._1.toString)
+
         val updatedData = topLevelResponse.data +
-          (topLevelRequest.resource -> sorted)
+          (topLevelRequest.resource -> mutableTopLevelData)
         val responseWithUpdatedData = topLevelResponse.copy(data = updatedData)
 
-        val finalResponse = fieldResponses.foldLeft(responseWithUpdatedData)(_ ++ _.response)
+        val finalResponse = fieldResponses.foldLeft(responseWithUpdatedData)((lhs, rhs) => lhs.merge(rhs.response))
         val relatedResponsesFut = fieldResponses.flatMap { fieldResponse =>
           fieldResponse.response.data.headOption.map { case (resourceName, data) =>
             val newTopLevelRequest = TopLevelRequest(resourceName, fieldResponse.requestField)
@@ -151,7 +150,7 @@ class EngineImpl @Inject() (
           }
         }
         Future.sequence(relatedResponsesFut).map { relatedResponses =>
-          relatedResponses.foldLeft(finalResponse)(_ ++ _)
+          relatedResponses.foldLeft(finalResponse)(_ merge _)
         }
       }
     }.getOrElse {
@@ -327,7 +326,7 @@ class EngineImpl @Inject() (
     Future.fold(futureIdMapAndResponse)(FieldRelationResponse(requestField, path)) {
       case (fieldRelationResponse, (idMap, res)) => {
         fieldRelationResponse.copy(
-          response = fieldRelationResponse.response ++ res,
+          response = fieldRelationResponse.response merge res,
           idsToAnnotate = Some(fieldRelationResponse.idsToAnnotate.getOrElse(Map.empty) ++ idMap))
       }
     }
