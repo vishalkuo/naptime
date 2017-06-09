@@ -24,6 +24,8 @@ import com.linkedin.data.schema.RecordDataSchema
 import org.coursera.naptime.ResourceName
 import org.coursera.naptime.ResponsePagination
 import org.coursera.naptime.schema.Resource
+import play.api
+import play.api.data
 import play.api.libs.json.JsValue
 import play.api.mvc.RequestHeader
 
@@ -149,16 +151,20 @@ case class ResponseMetrics(
 case class Response(
   topLevelResponses: Map[TopLevelRequest, TopLevelResponse],
   data: Map[ResourceName, List[(AnyRef, DataMap)]],
-  metrics: ResponseMetrics = ResponseMetrics()) {
+  metrics: ResponseMetrics = ResponseMetrics(),
+  sortOrder2: Option[List[String]] = None) {
 
   // TODO: performance test this implementation, and consider optimizing it.
   // Note: this operation potentially mutates the current response due to interior mutability.
-  def merge(other: Response, sortOrderOption: Option[List[String]] = None): Response = {
+  def ++(other: Response, sortOrder: Option[List[String]] = None): Response = {
+    println(s"REQUEST: $topLevelResponses")
     val mergedTopLevel = topLevelResponses ++ other.topLevelResponses
     val mergedData = (data.keySet ++ other.data.keySet).map { resourceName =>
+      println(s"LEFT: ${data.getOrElse(resourceName, List.empty)}")
+      println(s"RIGHT: ${other.data.getOrElse(resourceName, List.empty)}")
       val lhs = data.getOrElse(resourceName, Map.empty).toMap
       val rhs = other.data.getOrElse(resourceName, Map.empty).toMap
-      val mergedList = (lhs.keySet ++ rhs.keySet).map { key =>
+      val mergedList1 = (lhs.keySet ++ rhs.keySet).map { key =>
         val lh = lhs.get(key)
         val rh = rhs.get(key)
         val merged = (lh, rh) match {
@@ -172,11 +178,12 @@ case class Response(
             mutableL
         }
         (key, merged)
-      }.toList
-      val resultantList = sortOrderOption match {
-        case Some(sortOrder) => {
-          val indexedOrder = sortOrder.zipWithIndex.toMap
-          mergedList.sortBy(id => indexedOrder(id.toString))
+      }
+      val mergedList = mergedList1.toList
+      val resultantList = sortOrder2 match {
+        case Some(order) => {
+          val indexedOrder = order.zipWithIndex.toMap
+          mergedList.sortBy(id => indexedOrder.getOrElse(id.toString, 0))
         }
         case _ => mergedList
       }
